@@ -1,12 +1,14 @@
 import React, { useState, useEffect } from 'react';
-import { X, Eye, EyeOff, Server, Key, Link2, Sparkles } from 'lucide-react';
-import { HermesURL } from '../types';
+import { X, Eye, EyeOff, Server, Key, Link2, Sparkles, Terminal } from 'lucide-react';
+import { HermesURL, Language } from '../types';
+import { translations } from '../utils/i18n';
 
 interface UrlModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSave: (data: Omit<HermesURL, 'id'>, id?: string) => void;
   editingItem: HermesURL | null;
+  currentLang: Language;
 }
 
 export const UrlModal: React.FC<UrlModalProps> = ({
@@ -14,7 +16,9 @@ export const UrlModal: React.FC<UrlModalProps> = ({
   onClose,
   onSave,
   editingItem,
+  currentLang,
 }) => {
+  const t = translations[currentLang];
   const [name, setName] = useState('');
   const [url, setUrl] = useState('');
   const [password, setPassword] = useState('');
@@ -45,13 +49,13 @@ export const UrlModal: React.FC<UrlModalProps> = ({
     setError(null);
 
     if (!name.trim()) {
-      setError('Please enter a server name');
+      setError(currentLang === 'vi' ? 'Vui lòng nhập tên định danh máy chủ' : 'Please specify a server name');
       return;
     }
 
     let trimmedUrl = url.trim();
     if (!trimmedUrl) {
-      setError('Please enter a server URL');
+      setError(currentLang === 'vi' ? 'Vui lòng nhập URL máy chủ' : 'Please specify an endpoint URL');
       return;
     }
 
@@ -62,7 +66,7 @@ export const UrlModal: React.FC<UrlModalProps> = ({
     try {
       new URL(trimmedUrl);
     } catch {
-      setError('Please enter a valid URL (e.g., https://hermes.orangepi.vn)');
+      setError(currentLang === 'vi' ? 'Định dạng URL không hợp lệ (ví dụ: https://hermes.orangepi.vn)' : 'Invalid URL syntax (e.g. https://hermes.orangepi.vn)');
       return;
     }
 
@@ -86,96 +90,98 @@ export const UrlModal: React.FC<UrlModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-xs animate-in fade-in duration-200">
-      <div className="bg-white rounded-2xl shadow-xl border border-slate-200 max-w-lg w-full overflow-hidden">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-xs animate-in fade-in duration-150">
+      <div className="bg-slate-900 rounded-xl shadow-2xl border border-slate-800 max-w-lg w-full overflow-hidden text-slate-100 font-mono">
         {/* Modal Header */}
-        <div className="bg-slate-50 border-b border-slate-100 px-6 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-lg bg-blue-100 text-blue-600 flex items-center justify-center">
-              <Server className="w-4 h-4" />
+        <div className="bg-slate-950/80 border-b border-slate-800 px-5 py-3.5 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <div className="w-7 h-7 rounded bg-slate-900 border border-slate-700 flex items-center justify-center text-cyan-400">
+              <Terminal className="w-4 h-4" />
             </div>
-            <h2 className="text-lg font-bold text-slate-800">
-              {editingItem ? 'Edit Hermes Server' : 'Add Hermes Server'}
+            <h2 className="text-sm font-bold text-slate-100 tracking-wider">
+              {editingItem ? t.modalEditTitle : t.modalAddTitle}
             </h2>
           </div>
           <button
             onClick={onClose}
-            className="text-slate-400 hover:text-slate-600 p-1.5 rounded-lg hover:bg-slate-100 transition-colors cursor-pointer"
+            className="text-slate-400 hover:text-slate-200 p-1 rounded hover:bg-slate-800 transition-colors cursor-pointer"
           >
-            <X className="w-5 h-5" />
+            <X className="w-4 h-4" />
           </button>
         </div>
 
         {/* Modal Body */}
-        <form onSubmit={handleSubmit} className="p-6 space-y-4">
+        <form onSubmit={handleSubmit} className="p-5 space-y-4">
           {error && (
-            <div className="p-3 bg-red-50 border border-red-200 text-red-700 text-sm rounded-xl">
+            <div className="p-2.5 bg-rose-950/70 border border-rose-500/40 text-rose-300 text-xs rounded-lg">
               {error}
             </div>
           )}
 
           <div>
-            <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5">
-              Server Name
+            <label className="block text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-1">
+              {t.serverNameLabel}
             </label>
             <input
               type="text"
               required
               value={name}
               onChange={(e) => setName(e.target.value)}
-              placeholder="e.g., OrangePi Production, Local Lab"
-              className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-slate-800 placeholder-slate-400 text-sm focus:outline-hidden focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all"
+              placeholder={t.serverNamePlaceholder}
+              className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-lg text-slate-100 placeholder-slate-600 text-xs focus:outline-hidden focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 transition-all font-mono"
             />
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5 flex items-center justify-between">
-              <span>Server URL</span>
+            <div className="flex items-center justify-between mb-1">
+              <label className="block text-[11px] font-semibold text-slate-400 uppercase tracking-wider">
+                {t.serverUrlLabel}
+              </label>
               {!editingItem && (
                 <button
                   type="button"
                   onClick={fillDemoCredentials}
-                  className="text-xs text-blue-600 hover:text-blue-700 font-normal flex items-center gap-1 cursor-pointer"
+                  className="text-[11px] text-cyan-400 hover:text-cyan-300 font-mono flex items-center gap-1 cursor-pointer"
                 >
                   <Sparkles className="w-3 h-3" />
-                  Fill test demo
+                  {t.fillDemoBtn}
                 </button>
               )}
-            </label>
+            </div>
             <div className="relative">
-              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
-                <Link2 className="w-4 h-4" />
+              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-600">
+                <Link2 className="w-3.5 h-3.5" />
               </div>
               <input
                 type="text"
                 required
                 value={url}
                 onChange={(e) => setUrl(e.target.value)}
-                placeholder="https://hermes.orangepi.vn"
-                className="w-full pl-9 pr-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-slate-800 placeholder-slate-400 text-sm focus:outline-hidden focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all font-mono"
+                placeholder={t.serverUrlPlaceholder}
+                className="w-full pl-8 pr-3 py-2 bg-slate-950 border border-slate-800 rounded-lg text-slate-100 placeholder-slate-600 text-xs focus:outline-hidden focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 transition-all font-mono"
               />
             </div>
-            <p className="text-xs text-slate-500 mt-1">
-              Include the protocol (https:// or http://).
+            <p className="text-[11px] text-slate-500 mt-1">
+              {t.urlNote}
             </p>
           </div>
 
           {/* Save Credentials Checkbox */}
-          <div className="pt-2 border-t border-slate-100">
-            <label className="flex items-start gap-3 cursor-pointer select-none">
+          <div className="pt-2 border-t border-slate-800/80">
+            <label className="flex items-start gap-2.5 cursor-pointer select-none">
               <input
                 type="checkbox"
                 checked={saveCredentials}
                 onChange={(e) => setSaveCredentials(e.target.checked)}
-                className="mt-1 w-4 h-4 rounded text-blue-600 focus:ring-blue-500 border-slate-300 cursor-pointer"
+                className="mt-0.5 w-4 h-4 rounded text-cyan-500 focus:ring-cyan-500 border-slate-700 bg-slate-950 cursor-pointer"
               />
               <div>
-                <span className="text-sm font-semibold text-slate-800 flex items-center gap-1.5">
-                  <Key className="w-4 h-4 text-emerald-600" />
-                  Save Password for Auto-Login
+                <span className="text-xs font-semibold text-slate-200 flex items-center gap-1.5">
+                  <Key className="w-3.5 h-3.5 text-cyan-400" />
+                  {t.saveCredsLabel}
                 </span>
-                <p className="text-xs text-slate-500 mt-0.5">
-                  Hermes WebUI uses password-only authentication (no username required).
+                <p className="text-[11px] text-slate-400 mt-0.5">
+                  {t.saveCredsDesc}
                 </p>
               </div>
             </label>
@@ -183,46 +189,43 @@ export const UrlModal: React.FC<UrlModalProps> = ({
 
           {/* Password Input (conditional) */}
           {saveCredentials && (
-            <div className="pl-7 pt-1 space-y-1.5">
-              <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider">
-                Instance Password
+            <div className="pl-6 pt-1 space-y-1">
+              <label className="block text-[11px] font-semibold text-slate-400 uppercase tracking-wider">
+                {t.passwordLabel}
               </label>
               <div className="relative">
                 <input
                   type={showPassword ? 'text' : 'password'}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  placeholder="Enter Hermes password"
-                  className="w-full px-3.5 py-2.5 pr-10 bg-slate-50 border border-slate-300 rounded-xl text-slate-800 placeholder-slate-400 text-sm focus:outline-hidden focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all font-mono"
+                  placeholder={t.passwordPlaceholder}
+                  className="w-full px-3 py-2 pr-9 bg-slate-950 border border-slate-800 rounded-lg text-slate-100 placeholder-slate-600 text-xs focus:outline-hidden focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 transition-all font-mono"
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-600 cursor-pointer"
+                  className="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-500 hover:text-slate-300 cursor-pointer"
                 >
-                  {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  {showPassword ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
                 </button>
               </div>
-              <p className="text-xs text-slate-400">
-                Credentials are saved securely in your browser's local store.
-              </p>
             </div>
           )}
 
           {/* Modal Footer */}
-          <div className="pt-4 flex items-center justify-end gap-3 border-t border-slate-100">
+          <div className="pt-3 flex items-center justify-end gap-2.5 border-t border-slate-800/80">
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2.5 rounded-xl border border-slate-200 text-slate-700 hover:bg-slate-50 text-sm font-semibold transition-colors cursor-pointer"
+              className="px-3.5 py-2 rounded-lg border border-slate-800 text-slate-300 hover:bg-slate-800 text-xs font-mono font-medium transition-colors cursor-pointer"
             >
-              Cancel
+              {t.btnCancel}
             </button>
             <button
               type="submit"
-              className="px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold shadow-sm transition-colors cursor-pointer"
+              className="px-4 py-2 rounded-lg bg-cyan-500 hover:bg-cyan-400 active:bg-cyan-600 text-slate-950 text-xs font-mono font-bold shadow-sm transition-colors cursor-pointer"
             >
-              {editingItem ? 'Save Changes' : 'Add Server'}
+              {editingItem ? t.btnSave : t.btnAdd}
             </button>
           </div>
         </form>

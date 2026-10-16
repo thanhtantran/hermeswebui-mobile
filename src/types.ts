@@ -10,3 +10,14 @@ export interface HermesURL {
 }
 
 export type ViewportMode = 'mobile' | 'tablet' | 'responsive';
+
+export type ServerStatus = 'idle' | 'checking' | 'online' | 'offline';
+
+export interface PingResult {
+  status: ServerStatus;
+  latencyMs?: number;
+  lastCheckedAt?: number;
+  error?: string;
+}
+
+export type Language = 'en' | 'vi';
