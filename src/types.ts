@@ -18,6 +18,9 @@ export interface PingResult {
   latencyMs?: number;
   lastCheckedAt?: number;
   error?: string;
+  statusCode?: number;
 }
 
 export type Language = 'en' | 'vi';
+
+export type Theme = 'dark' | 'light';

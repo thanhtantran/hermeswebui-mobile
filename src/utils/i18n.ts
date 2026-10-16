@@ -1,4 +1,4 @@
-import { Language } from '../types';
+import { Language, Theme } from '../types';
 
 export const translations = {
   en: {
@@ -9,6 +9,9 @@ export const translations = {
     language: 'LANGUAGE',
     backup: 'BACKUP',
     addServer: 'ADD SERVER',
+    themeToggle: 'Toggle theme (Light / Dark)',
+    lightTheme: 'Light Mode',
+    darkTheme: 'Dark Mode',
     searchPlaceholder: 'Search host or instance name... [ / ]',
     pingAll: 'PING ALL',
     pinging: 'PINGING...',
@@ -23,6 +26,8 @@ export const translations = {
     checking: 'PROBING',
     latency: 'LATENCY',
     connect: 'CONNECT',
+    openAppWindow: 'APP WINDOW',
+    openAppWindowDesc: 'Launch as standalone app window (bypasses iframe restrictions like native app)',
     edit: 'EDIT',
     delete: 'DELETE',
     credentialsSaved: 'CREDENTIALS SAVED',
@@ -30,24 +35,22 @@ export const translations = {
     deleteConfirm: 'Delete server record?',
     confirmYes: 'YES, DELETE',
     confirmCancel: 'CANCEL',
-    restoreDemo: 'RESTORE ORANGEPI DEMO',
-    noServersTitle: 'NO SERVERS REGISTERED',
-    noServersDesc: 'No Hermes WebUI hosts configured in this terminal. Add an endpoint or restore the official demo.',
+    noServersTitle: 'NO SERVERS CONFIGURED',
+    noServersDesc: 'No Hermes WebUI hosts configured. Add an endpoint to connect and monitor status.',
     noSearchMatch: 'No servers match query',
-    addFirstServer: 'INITIALIZE FIRST SERVER',
+    addFirstServer: 'ADD FIRST SERVER',
     // Modal
     modalAddTitle: 'ADD HERMES HOST',
     modalEditTitle: 'EDIT HERMES HOST',
     serverNameLabel: 'INSTANCE IDENTIFIER / NAME',
-    serverNamePlaceholder: 'e.g. OrangePi Lab, Home Server',
+    serverNamePlaceholder: 'e.g. Production Lab, Local Node',
     serverUrlLabel: 'ENDPOINT URL',
-    serverUrlPlaceholder: 'https://hermes.orangepi.vn',
+    serverUrlPlaceholder: 'https://192.168.1.100:8080',
     urlNote: 'Requires standard HTTP or HTTPS protocol scheme',
     saveCredsLabel: 'STORE INSTANCE PASSWORD FOR AUTO-LOGIN',
     saveCredsDesc: 'Hermes WebUI requires only password authentication (no username).',
     passwordLabel: 'INSTANCE PASSWORD',
     passwordPlaceholder: 'Enter Hermes password',
-    fillDemoBtn: 'USE DEMO PARAMETERS',
     btnCancel: 'CANCEL',
     btnSave: 'COMMIT CHANGES',
     btnAdd: 'REGISTER SERVER',
@@ -61,7 +64,7 @@ export const translations = {
     copied: 'COPIED TO CLIPBOARD',
     downloadJson: 'DOWNLOAD .JSON',
     importBtn: 'INGEST PAYLOAD',
-    // WebView / Session
+    // WebView / Session & Proxy
     backToConsole: 'CONSOLE',
     copyPass: 'COPY PASS',
     copiedShort: 'COPIED',
@@ -70,14 +73,12 @@ export const translations = {
     launchDirect: 'OPEN IN NEW TAB',
     reloading: 'RELOADING...',
     loadingFrame: 'INITIALIZING HERMES SESSION...',
+    proxyActive: 'X-FRAME PROXY ACTIVE',
+    proxyDirect: 'DIRECT RAW URL',
+    proxyDesc: 'X-Frame-Options and CSP headers bypassed via server proxy',
     securityNoticeTitle: 'EMBEDDED BROWSER SECURITY NOTICE',
-    securityNoticeDesc: 'If this frame remains blank or connection refused, this Hermes host enforces strict X-Frame-Options or CSP frame-ancestors.',
+    securityNoticeDesc: 'If this frame remains blank or connection refused, you can toggle between Proxy Bypass Mode and Direct URL below.',
     openTabBtn: 'OPEN HERMES DIRECTLY',
-    // About guide
-    guideTitle: 'SYSTEM ARCHITECTURE & CREDENTIAL SECURITY',
-    guideDesc: 'Hermes instances authenticate using single-tier password protection. All endpoints, credentials, and telemetry records are stored in browser localStorage.',
-    demoHost: 'Official Host:',
-    demoPass: 'Demo Password:',
   },
   vi: {
     appTitle: 'BẢNG ĐIỀU KHIỂN HERMES',
@@ -87,6 +88,9 @@ export const translations = {
     language: 'NGÔN NGỮ',
     backup: 'SAO LƯU',
     addServer: 'THÊM MÁY CHỦ',
+    themeToggle: 'Chuyển giao diện sáng / tối',
+    lightTheme: 'Giao diện sáng',
+    darkTheme: 'Giao diện tối',
     searchPlaceholder: 'Tìm kiếm tên máy chủ hoặc URL... [ / ]',
     pingAll: 'KIỂM TRA TẤT CẢ',
     pinging: 'ĐANG KIỂM TRA...',
@@ -100,7 +104,9 @@ export const translations = {
     pending: 'CHỜ KIỂM TRA',
     checking: 'ĐANG QUÉT',
     latency: 'ĐỘ TRỄ',
-    connect: 'KẾT NỐI',
+    connect: 'KẾT NỐI (NHÚNG)',
+    openAppWindow: 'CỬA SỔ APP',
+    openAppWindowDesc: 'Mở trong cửa sổ app riêng biệt (hoạt động giống hệt ứng dụng React Native gốc)',
     edit: 'SỬA',
     delete: 'XÓA',
     credentialsSaved: 'ĐÃ LƯU MẬT KHẨU',
@@ -108,24 +114,22 @@ export const translations = {
     deleteConfirm: 'Xác nhận xóa máy chủ này?',
     confirmYes: 'XÓA NGAY',
     confirmCancel: 'HỦY',
-    restoreDemo: 'KHÔI PHỤC MẪU ORANGEPI',
     noServersTitle: 'CHƯA CÓ MÁY CHỦ NÀO',
-    noServersDesc: 'Chưa có máy chủ Hermes WebUI nào được thiết lập. Hãy thêm máy chủ mới hoặc dùng máy chủ thử nghiệm.',
+    noServersDesc: 'Chưa có máy chủ Hermes WebUI nào được thiết lập. Hãy thêm máy chủ mới để quản lý và kết nối.',
     noSearchMatch: 'Không tìm thấy máy chủ phù hợp với từ khóa',
     addFirstServer: 'THÊM MÁY CHỦ ĐẦU TIÊN',
     // Modal
     modalAddTitle: 'THÊM MÁY CHỦ HERMES',
     modalEditTitle: 'CHỈNH SỬA MÁY CHỦ',
     serverNameLabel: 'TÊN ĐỊNH DANH MÁY CHỦ',
-    serverNamePlaceholder: 'Ví dụ: OrangePi Lab, Máy chủ nhà',
+    serverNamePlaceholder: 'Ví dụ: Production Lab, Máy chủ nhà',
     serverUrlLabel: 'ĐỊA CHỈ URL MÁY CHỦ',
-    serverUrlPlaceholder: 'https://hermes.orangepi.vn',
+    serverUrlPlaceholder: 'https://192.168.1.100:8080',
     urlNote: 'Cần bao gồm giao thức chuẩn http:// hoặc https://',
     saveCredsLabel: 'LƯU MẬT KHẨU ĐỂ TỰ ĐỘNG ĐĂNG NHẬP',
     saveCredsDesc: 'Hermes WebUI sử dụng phương thức đăng nhập chỉ với mật khẩu (không cần tên đăng nhập).',
     passwordLabel: 'MẬT KHẨU TRUY CẬP',
     passwordPlaceholder: 'Nhập mật khẩu Hermes',
-    fillDemoBtn: 'ĐIỀN THÔNG SỐ DEMO',
     btnCancel: 'HỦY BỎ',
     btnSave: 'LƯU THAY ĐỔI',
     btnAdd: 'LƯU MÁY CHỦ',
@@ -139,7 +143,7 @@ export const translations = {
     copied: 'ĐÃ SAO CHÉP',
     downloadJson: 'TẢI TỆP .JSON',
     importBtn: 'TIẾP NHẬN DỮ LIỆU',
-    // WebView / Session
+    // WebView / Session & Proxy
     backToConsole: 'BẢNG ĐIỀU KHIỂN',
     copyPass: 'CHÉP PASS',
     copiedShort: 'ĐÃ CHÉP',
@@ -148,20 +152,19 @@ export const translations = {
     launchDirect: 'MỞ TRONG TAB MỚI',
     reloading: 'ĐANG TẢI LẠI...',
     loadingFrame: 'ĐANG KHỞI TẠO PHIÊN HERMES...',
-    securityNoticeTitle: 'LƯU Ý BẢO MẬT TRÌNH DUYỆT EMBED',
-    securityNoticeDesc: 'Nếu màn hình không hiển thị hoặc bị từ chối kết nối, máy chủ này có thể đang kích hoạt chính sách bảo vệ X-Frame-Options.',
-    openTabBtn: 'MỞ HERMES TRỰC TIẾP TRÊN TRÌNH DUYỆT',
-    // About guide
-    guideTitle: 'KIẾN TRÚC HỆ THỐNG & BẢO MẬT',
-    guideDesc: 'Hermes sử dụng cơ chế đăng nhập bằng mật khẩu trực tiếp. Tất cả cấu hình máy chủ và mật khẩu được mã hóa lưu trữ an toàn trong localStorage của bạn.',
-    demoHost: 'Máy chủ thử nghiệm:',
-    demoPass: 'Mật khẩu mặc định:',
+    proxyActive: 'BỎ QUA X-FRAME (PROXY)',
+    proxyDirect: 'URL GỐC TRỰC TIẾP',
+    proxyDesc: 'Đã bỏ qua các tiêu đề X-Frame-Options và CSP thông qua máy chủ proxy',
+    securityNoticeTitle: 'CHẾ ĐỘ XEM TRANG WEB HERMES',
+    securityNoticeDesc: 'Nếu máy chủ từ chối kết nối trực tiếp, ứng dụng đã tự động kích hoạt Proxy Bỏ qua X-Frame-Options để hiển thị mượt mà bên trong khung.',
+    openTabBtn: 'MỞ TRỰC TIẾP TRÊN TRÌNH DUYỆT',
   },
 } as const;
 
 export type TranslationKey = keyof typeof translations.en;
 
 const LANG_STORAGE_KEY = 'hermes_language';
+const THEME_STORAGE_KEY = 'hermes_theme';
 
 export function getStoredLanguage(): Language {
   try {
@@ -169,13 +172,12 @@ export function getStoredLanguage(): Language {
     if (saved === 'vi' || saved === 'en') {
       return saved;
     }
-    // Default to 'en' or browser language detection
     if (navigator.language && navigator.language.startsWith('vi')) {
       return 'vi';
     }
-    return 'en';
+    return 'vi'; // Default to Vietnamese for Vietnamese users
   } catch {
-    return 'en';
+    return 'vi';
   }
 }
 
@@ -183,6 +185,26 @@ export function saveStoredLanguage(lang: Language): void {
   try {
     localStorage.setItem(LANG_STORAGE_KEY, lang);
   } catch {
-    // silent fallback
+    // silent
+  }
+}
+
+export function getStoredTheme(): Theme {
+  try {
+    const saved = localStorage.getItem(THEME_STORAGE_KEY);
+    if (saved === 'light' || saved === 'dark') {
+      return saved;
+    }
+    return 'dark'; // Default to tech dark console
+  } catch {
+    return 'dark';
+  }
+}
+
+export function saveStoredTheme(theme: Theme): void {
+  try {
+    localStorage.setItem(THEME_STORAGE_KEY, theme);
+  } catch {
+    // silent
   }
 }

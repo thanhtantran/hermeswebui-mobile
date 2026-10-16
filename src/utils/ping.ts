@@ -1,25 +1,49 @@
 /**
- * Utility for performing lightweight client-side connectivity & latency checks on server URLs.
+ * Utility for performing server connectivity and latency checks.
+ * Queries the backend /api/ping endpoint first, with client-side fallback.
  */
 
 export interface PingOutcome {
   isOnline: boolean;
   latencyMs: number;
   error?: string;
+  statusCode?: number;
 }
 
 export async function pingServerUrl(url: string, timeoutMs = 4500): Promise<PingOutcome> {
   const startTime = performance.now();
+
+  // 1. Try server-side ping endpoint first (no CORS restriction, accurate status)
+  try {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), timeoutMs);
+
+    const res = await fetch(`/api/ping?url=${encodeURIComponent(url)}`, {
+      signal: controller.signal,
+    });
+    clearTimeout(timeout);
+
+    if (res.ok) {
+      const data = await res.json();
+      return {
+        isOnline: Boolean(data.isOnline),
+        latencyMs: data.latencyMs || Math.round(performance.now() - startTime),
+        statusCode: data.statusCode,
+        error: data.error,
+      };
+    }
+  } catch (backendErr) {
+    // If backend ping failed or in client-only preview, proceed to client fallback
+  }
+
+  // 2. Client-side fallback using no-cors fetch
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
 
   try {
-    // We append a harmless query param to prevent browser caching
     const urlObj = new URL(url);
     urlObj.searchParams.set('_h_ping', String(Date.now()));
 
-    // In browsers, cross-origin requests to arbitrary ports/hosts without CORS headers
-    // must use mode: 'no-cors'. An opaque response confirms the server is reachable and active.
     await fetch(urlObj.toString(), {
       method: 'HEAD',
       mode: 'no-cors',
@@ -36,7 +60,7 @@ export async function pingServerUrl(url: string, timeoutMs = 4500): Promise<Ping
   } catch (err: any) {
     clearTimeout(timeoutId);
 
-    // If HEAD failed, give GET a brief shot (some servers reject HEAD with 405 or close socket)
+    // If HEAD failed, try GET
     if (err?.name !== 'AbortError') {
       try {
         const retryController = new AbortController();
@@ -55,7 +79,7 @@ export async function pingServerUrl(url: string, timeoutMs = 4500): Promise<Ping
           isOnline: true,
           latencyMs: Math.round(performance.now() - retryStart),
         };
-      } catch (retryErr: any) {
+      } catch {
         // Fall through to offline
       }
     }
@@ -66,7 +90,7 @@ export async function pingServerUrl(url: string, timeoutMs = 4500): Promise<Ping
     return {
       isOnline: false,
       latencyMs: elapsed,
-      error: isTimeout ? 'Timeout (>4.5s)' : (err?.message || 'Connection refused or host unreachable'),
+      error: isTimeout ? 'Timeout (>4.5s)' : (err?.message || 'Host unreachable'),
     };
   }
 }

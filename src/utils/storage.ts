@@ -2,30 +2,20 @@ import { HermesURL } from '../types';
 
 const STORAGE_KEY = 'hermes_urls';
 
-export const DEFAULT_PRESET: HermesURL = {
-  id: 'demo-orangepi',
-  name: 'OrangePi Hermes (Official Demo)',
-  url: 'https://hermes.orangepi.vn',
-  password: 'orangepi',
-  saveCredentials: true,
-  createdAt: Date.now(),
-  notes: 'Official Hermes WebUI demo instance',
-};
-
 export const loadStoredUrls = (): HermesURL[] => {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (!raw) {
-      return [DEFAULT_PRESET];
+      return [];
     }
     const parsed = JSON.parse(raw);
     if (Array.isArray(parsed)) {
       return parsed;
     }
-    return [DEFAULT_PRESET];
+    return [];
   } catch (err) {
     console.error('Failed to load Hermes URLs from storage:', err);
-    return [DEFAULT_PRESET];
+    return [];
   }
 };
 

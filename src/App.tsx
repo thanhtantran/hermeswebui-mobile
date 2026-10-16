@@ -5,25 +5,22 @@ import { UrlCard } from './components/UrlCard';
 import { UrlModal } from './components/UrlModal';
 import { WebViewScreen } from './components/WebViewScreen';
 import { BackupModal } from './components/BackupModal';
-import { HermesURL, PingResult, Language } from './types';
+import { HermesURL, PingResult, Language, Theme } from './types';
 import {
   loadStoredUrls,
   saveStoredUrls,
-  DEFAULT_PRESET,
 } from './utils/storage';
 import { pingServerUrl } from './utils/ping';
 import {
   getStoredLanguage,
   saveStoredLanguage,
+  getStoredTheme,
+  saveStoredTheme,
   translations,
 } from './utils/i18n';
 import {
   Server,
   Plus,
-  Sparkles,
-  ShieldCheck,
-  Terminal,
-  Cpu,
 } from 'lucide-react';
 
 export default function App() {
@@ -34,6 +31,7 @@ export default function App() {
   const [isBackupOpen, setIsBackupOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [currentLang, setCurrentLang] = useState<Language>(getStoredLanguage);
+  const [currentTheme, setCurrentTheme] = useState<Theme>(getStoredTheme);
 
   // Ping status tracking
   const [pingResults, setPingResults] = useState<Record<string, PingResult>>({});
@@ -42,10 +40,31 @@ export default function App() {
 
   const t = translations[currentLang];
 
-  // Load URLs from storage on startup
+  // Sync theme with document class
+  useEffect(() => {
+    if (currentTheme === 'dark') {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+  }, [currentTheme]);
+
+  const handleToggleTheme = () => {
+    const nextTheme: Theme = currentTheme === 'dark' ? 'light' : 'dark';
+    setCurrentTheme(nextTheme);
+    saveStoredTheme(nextTheme);
+  };
+
+  // Load URLs from storage on startup (clean any demo presets for production release)
   useEffect(() => {
     const loaded = loadStoredUrls();
-    setUrls(loaded);
+    const cleaned = loaded.filter(
+      (u) => u.id !== 'demo-orangepi' && u.url !== 'https://hermes.orangepi.vn'
+    );
+    if (cleaned.length !== loaded.length) {
+      saveStoredUrls(cleaned);
+    }
+    setUrls(cleaned);
   }, []);
 
   const handleToggleLanguage = (newLang: Language) => {
@@ -73,6 +92,7 @@ export default function App() {
         status: result.isOnline ? 'online' : 'offline',
         latencyMs: result.latencyMs,
         lastCheckedAt: Date.now(),
+        statusCode: result.statusCode,
         error: result.error,
       },
     }));
@@ -102,6 +122,7 @@ export default function App() {
           status: (res.isOnline ? 'online' : 'offline') as 'online' | 'offline',
           latencyMs: res.latencyMs,
           lastCheckedAt: Date.now(),
+          statusCode: res.statusCode,
           error: res.error,
         },
       };
@@ -159,13 +180,11 @@ export default function App() {
 
   const handleSaveModal = (data: Omit<HermesURL, 'id'>, id?: string) => {
     if (id) {
-      // Update existing
       const updated = urls.map((u) => (u.id === id ? { ...u, ...data } : u));
       handleSaveUrls(updated);
       const target = updated.find((u) => u.id === id);
       if (target) handlePingSingle(target);
     } else {
-      // Add new
       const newItem: HermesURL = {
         id: `hermes-${Date.now()}`,
         ...data,
@@ -196,16 +215,6 @@ export default function App() {
     setActiveUrl(item);
   };
 
-  const handleAddDefaultPreset = () => {
-    const exists = urls.some((u) => u.url === DEFAULT_PRESET.url);
-    if (!exists) {
-      const demoItem = { ...DEFAULT_PRESET, id: `demo-${Date.now()}` };
-      const updated = [...urls, demoItem];
-      handleSaveUrls(updated);
-      handlePingSingle(demoItem);
-    }
-  };
-
   const handleImportSuccess = (imported: HermesURL[]) => {
     const existingUrlsMap = new Map(urls.map((u) => [u.url, u]));
     imported.forEach((item) => {
@@ -223,6 +232,8 @@ export default function App() {
         urlData={activeUrl}
         onBack={() => setActiveUrl(null)}
         currentLang={currentLang}
+        currentTheme={currentTheme}
+        onToggleTheme={handleToggleTheme}
       />
     );
   }
@@ -234,12 +245,14 @@ export default function App() {
   );
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col font-mono selection:bg-cyan-500/30 selection:text-cyan-200">
+    <div className="min-h-screen bg-slate-100 dark:bg-slate-950 text-slate-900 dark:text-slate-100 flex flex-col font-mono selection:bg-cyan-500/30 selection:text-cyan-600 dark:selection:text-cyan-200 transition-colors duration-200">
       {/* Terminal Top Navigation Bar */}
       <Header
         serverCount={urls.length}
         currentLang={currentLang}
         onToggleLanguage={handleToggleLanguage}
+        currentTheme={currentTheme}
+        onToggleTheme={handleToggleTheme}
         onOpenAddModal={handleOpenAdd}
         onOpenBackupModal={() => setIsBackupOpen(true)}
       />
@@ -260,32 +273,25 @@ export default function App() {
 
         {/* Server Endpoint Grid / List */}
         {filteredUrls.length === 0 ? (
-          <div className="bg-slate-900 border border-slate-800 rounded-xl p-10 text-center shadow-inner">
-            <div className="w-12 h-12 rounded-lg bg-slate-950 border border-slate-800 text-cyan-400 flex items-center justify-center mx-auto mb-3 shadow-xs">
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-10 text-center shadow-xs">
+            <div className="w-12 h-12 rounded-lg bg-slate-100 dark:bg-slate-950 border border-slate-300 dark:border-slate-800 text-cyan-600 dark:text-cyan-400 flex items-center justify-center mx-auto mb-3 shadow-xs">
               <Server className="w-6 h-6 stroke-[1.8]" />
             </div>
-            <h3 className="text-sm font-bold text-slate-100 mb-1 tracking-wider uppercase">
+            <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100 mb-1 tracking-wider uppercase">
               {searchQuery ? t.noSearchMatch : t.noServersTitle}
             </h3>
-            <p className="text-slate-400 text-xs max-w-md mx-auto mb-5 leading-relaxed">
+            <p className="text-slate-500 dark:text-slate-400 text-xs max-w-md mx-auto mb-5 leading-relaxed">
               {searchQuery
                 ? `${t.noSearchMatch}: "${searchQuery}"`
                 : t.noServersDesc}
             </p>
-            <div className="flex flex-wrap items-center justify-center gap-2.5">
+            <div className="flex items-center justify-center">
               <button
                 onClick={handleOpenAdd}
-                className="px-4 py-2 rounded-lg bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold text-xs flex items-center gap-1.5 shadow-sm transition-all cursor-pointer"
+                className="px-4 py-2 rounded-lg bg-cyan-600 hover:bg-cyan-500 dark:bg-cyan-500 dark:hover:bg-cyan-400 text-white dark:text-slate-950 font-bold text-xs flex items-center gap-1.5 shadow-xs transition-all cursor-pointer"
               >
                 <Plus className="w-3.5 h-3.5 stroke-[3]" />
                 <span>{t.addFirstServer}</span>
-              </button>
-              <button
-                onClick={handleAddDefaultPreset}
-                className="px-3.5 py-2 rounded-lg bg-slate-950 hover:bg-slate-800 text-slate-300 hover:text-white border border-slate-800 font-medium text-xs flex items-center gap-1.5 transition-colors cursor-pointer"
-              >
-                <Sparkles className="w-3.5 h-3.5 text-cyan-400" />
-                <span>{t.restoreDemo}</span>
               </button>
             </div>
           </div>
@@ -305,35 +311,10 @@ export default function App() {
             ))}
           </div>
         )}
-
-        {/* System Architecture & Security Notice Guide */}
-        <div className="mt-8 bg-slate-900/60 border border-slate-800 rounded-xl p-4 text-xs text-slate-400">
-          <div className="flex items-start gap-3">
-            <div className="p-1.5 rounded-lg bg-slate-950 border border-slate-800 text-cyan-400 shrink-0 mt-0.5">
-              <ShieldCheck className="w-4 h-4" />
-            </div>
-            <div className="space-y-1 flex-1">
-              <h4 className="font-bold text-slate-200 tracking-wide text-xs">
-                {t.guideTitle}
-              </h4>
-              <p className="text-slate-400 text-[11px] leading-relaxed">
-                {t.guideDesc}
-              </p>
-              <div className="pt-1 flex flex-wrap items-center gap-3 text-[11px] text-slate-400">
-                <span>
-                  {t.demoHost} <code className="text-cyan-400 bg-slate-950 px-1.5 py-0.5 rounded border border-slate-800">hermes.orangepi.vn</code>
-                </span>
-                <span>
-                  {t.demoPass} <code className="text-emerald-400 bg-slate-950 px-1.5 py-0.5 rounded border border-slate-800">orangepi</code>
-                </span>
-              </div>
-            </div>
-          </div>
-        </div>
       </main>
 
       {/* Terminal Footer */}
-      <footer className="border-t border-slate-900 bg-slate-950/80 py-3 px-4 text-center text-[11px] text-slate-500">
+      <footer className="border-t border-slate-200 dark:border-slate-900 bg-white dark:bg-slate-950/80 py-3 px-4 text-center text-[11px] text-slate-500">
         <p className="font-mono">
           HERMES.UI CONSOLE · AUTONOMOUS AGENT SUITE
         </p>
