@@ -2,7 +2,7 @@
   "expo": {
     "name": "Hermes Mobile",
     "slug": "hermes-webui-mobile-app",
-    "version": "1.0.1",
+    "version": "1.0.2",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "hermesmobile",
@@ -15,7 +15,10 @@
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.thanhtan.hermesmobile"
+      "bundleIdentifier": "com.thanhtan.hermesmobile",
+      "infoPlist": {
+        "NSMicrophoneUsageDescription": "Hermes uses the microphone for voice input in the web interface."
+      }
     },
     "android": {
       "adaptiveIcon": {
@@ -23,10 +26,11 @@
         "backgroundColor": "#090d16"
       },
       "package": "com.thanhtan.hermesmobile",
-      "versionCode": 2,
+      "versionCode": 3,
       "permissions": [
         "INTERNET",
-        "ACCESS_NETWORK_STATE"
+        "ACCESS_NETWORK_STATE",
+        "RECORD_AUDIO"
       ]
     },
     "web": {

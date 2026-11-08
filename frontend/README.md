@@ -25,6 +25,7 @@
    - Hoàn toàn **không bị ảnh hưởng bởi chính sách `X-Frame-Options: DENY` hay CSP `frame-ancestors`** của Cloudflare/Hermes.
    - Tự động tiêm JavaScript điền mật khẩu và tự động đăng nhập khi vào trang.
    - Tích hợp nút Back phần cứng của Android (`BackHandler`).
+   - Khai báo quyền `RECORD_AUDIO` để WebView có thể xin quyền micro khi trang Hermes dùng `getUserMedia`.
    - Nút sao chép nhanh mật khẩu ngay trên thanh tiêu đề WebView.
 
 5. **Lưu trữ bảo mật & Sao lưu cấu hình**:
