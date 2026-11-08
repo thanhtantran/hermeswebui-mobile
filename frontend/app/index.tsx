@@ -14,6 +14,9 @@ import {
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import * as DocumentPicker from 'expo-document-picker';
+import * as Sharing from 'expo-sharing';
+import { File, Paths } from 'expo-file-system';
 import { storage } from '../src/utils/storage';
 import { pingServerUrl } from '../src/utils/ping';
 import { translations } from '../src/utils/i18n';
@@ -22,6 +25,25 @@ import type { HermesURL, PingResult, Language, Theme } from '../src/types';
 const STORAGE_KEY = 'hermes_urls';
 const LANG_KEY = 'hermes_lang';
 const THEME_KEY = 'hermes_theme';
+
+function makeId(): string {
+  return `srv-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
+}
+
+function normalizeServers(value: unknown): HermesURL[] {
+  if (!Array.isArray(value)) return [];
+  const seen = new Set<string>();
+  return value
+    .filter((item): item is HermesURL =>
+      Boolean(item) && typeof item === 'object' && typeof (item as HermesURL).url === 'string'
+    )
+    .map((item) => {
+      let id = typeof item.id === 'string' && item.id ? item.id : makeId();
+      while (seen.has(id)) id = makeId();
+      seen.add(id);
+      return { ...item, id };
+    });
+}
 
 
 export default function HomeScreen() {
@@ -39,7 +61,6 @@ export default function HomeScreen() {
   const [editingUrl, setEditingUrl] = useState<HermesURL | null>(null);
   const [backupVisible, setBackupVisible] = useState(false);
   const [backupTab, setBackupTab] = useState<'export' | 'import'>('export');
-  const [importJson, setImportJson] = useState('');
 
   const [formData, setFormData] = useState({
     name: '',
@@ -56,15 +77,17 @@ export default function HomeScreen() {
   }, []);
 
   const loadInitialData = async () => {
-    const savedUrls = await storage.getItem<HermesURL[]>(STORAGE_KEY, []);
+    const rawSaved = await storage.getItem<unknown>(STORAGE_KEY, []);
+    const savedUrls = normalizeServers(rawSaved);
     const savedLang = await storage.getItem<Language>(LANG_KEY, 'vi');
     const savedTheme = await storage.getItem<Theme>(THEME_KEY, 'dark');
 
-    // Remove any demo presets from previous sessions so user starts clean
-    const cleanedUrls = savedUrls.filter(
-      (u) => u.id !== 'demo-orangepi' && u.url !== 'https://hermes.orangepi.vn'
-    );
-    if (cleanedUrls.length !== savedUrls.length) {
+    // Only drop the old seeded demo entry (by its fixed id), never user-added servers.
+    const cleanedUrls = savedUrls.filter((u) => u.id !== 'demo-orangepi');
+    if (
+      cleanedUrls.length !== savedUrls.length ||
+      JSON.stringify(savedUrls) !== JSON.stringify(rawSaved)
+    ) {
       await storage.setItem(STORAGE_KEY, cleanedUrls);
     }
 
@@ -79,8 +102,16 @@ export default function HomeScreen() {
   };
 
   const saveUrls = async (newUrls: HermesURL[]) => {
-    await storage.setItem(STORAGE_KEY, newUrls);
+    const ok = await storage.setItem(STORAGE_KEY, newUrls);
     setUrls(newUrls);
+    if (!ok) {
+      Alert.alert(
+        lang === 'vi' ? 'Lỗi lưu dữ liệu' : 'Storage error',
+        lang === 'vi'
+          ? 'Không thể lưu danh sách máy chủ vào bộ nhớ thiết bị.'
+          : 'Could not save the server list to device storage.'
+      );
+    }
   };
 
   const toggleLanguage = async (newLang: Language) => {
@@ -203,7 +234,7 @@ export default function HomeScreen() {
     }
 
     const newUrl: HermesURL = {
-      id: editingUrl?.id || Date.now().toString(),
+      id: editingUrl?.id || makeId(),
       name: formData.name.trim(),
       url: trimmedUrl,
       password: formData.saveCredentials ? formData.password : undefined,
@@ -249,29 +280,85 @@ export default function HomeScreen() {
     });
   };
 
-  const handleImport = async () => {
-    if (!importJson.trim()) return;
+  const handleExportBackup = async () => {
     try {
-      const parsed = JSON.parse(importJson.trim());
-      if (!Array.isArray(parsed)) throw new Error();
+      if (urls.length === 0) {
+        Alert.alert(
+          lang === 'vi' ? 'Không có dữ liệu' : 'Nothing to export',
+          lang === 'vi' ? 'Chưa có máy chủ nào để sao lưu.' : 'No servers to back up yet.'
+        );
+        return;
+      }
+
+      const stamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
+      const file = new File(Paths.cache, `hermes-servers-${stamp}.json`);
+      file.write(JSON.stringify(urls, null, 2));
+
+      if (!(await Sharing.isAvailableAsync())) {
+        Alert.alert(
+          lang === 'vi' ? 'Lỗi' : 'Error',
+          lang === 'vi' ? 'Thiết bị không hỗ trợ chia sẻ file.' : 'File sharing is not available on this device.'
+        );
+        return;
+      }
+
+      await Sharing.shareAsync(file.uri, {
+        mimeType: 'application/json',
+        UTI: 'public.json',
+        dialogTitle: lang === 'vi' ? 'Lưu file sao lưu Hermes' : 'Save Hermes backup',
+      });
+    } catch {
+      Alert.alert(
+        lang === 'vi' ? 'Lỗi' : 'Error',
+        lang === 'vi' ? 'Không thể xuất file sao lưu.' : 'Could not export the backup file.'
+      );
+    }
+  };
+
+  const handlePickBackup = async () => {
+    try {
+      const result = await DocumentPicker.getDocumentAsync({
+        type: ['application/json', 'text/plain', 'application/octet-stream'],
+        copyToCacheDirectory: true,
+        multiple: false,
+      });
+      if (result.canceled || !result.assets?.length) return;
+
+      const raw = await new File(result.assets[0].uri).text();
+      const parsed = JSON.parse(raw);
+      const source = Array.isArray(parsed) ? parsed : parsed?.servers;
+      if (!Array.isArray(source)) throw new Error('Invalid backup file');
+
+      const incoming = normalizeServers(source);
       const merged = [...urls];
-      parsed.forEach((item: any) => {
+      let added = 0;
+      incoming.forEach((item) => {
         if (item.url && !merged.some((m) => m.url === item.url)) {
           merged.push({
-            id: item.id || Date.now().toString(),
+            id: makeId(),
             name: item.name || 'Server',
             url: item.url,
             password: item.password,
             saveCredentials: Boolean(item.saveCredentials),
           });
+          added++;
         }
       });
-      await saveUrls(merged);
-      pingAll(merged);
+
+      if (added > 0) {
+        await saveUrls(merged);
+        pingAll(merged);
+      }
       setBackupVisible(false);
-      setImportJson('');
+      Alert.alert(
+        lang === 'vi' ? 'Khôi phục hoàn tất' : 'Restore complete',
+        lang === 'vi' ? `Đã thêm ${added} máy chủ từ file sao lưu.` : `Added ${added} server(s) from the backup file.`
+      );
     } catch {
-      Alert.alert('Error', lang === 'vi' ? 'JSON không hợp lệ' : 'Invalid JSON');
+      Alert.alert(
+        lang === 'vi' ? 'Lỗi' : 'Error',
+        lang === 'vi' ? 'File JSON không hợp lệ hoặc không thể đọc.' : 'The JSON file is invalid or unreadable.'
+      );
     }
   };
 
@@ -626,25 +713,20 @@ export default function HomeScreen() {
               {backupTab === 'export' ? (
                 <>
                   <Text style={[styles.backupDesc, { color: colors.muted }]}>{t.exportDesc}</Text>
-                  <TextInput
-                    style={[styles.jsonBox, { backgroundColor: colors.inputBg, borderColor: colors.border, color: colors.text }]}
-                    multiline
-                    editable={false}
-                    value={JSON.stringify(urls, null, 2)}
-                  />
+                  <TouchableOpacity
+                    style={[styles.btnSubmit, { backgroundColor: colors.accent, marginTop: 4, alignSelf: 'flex-start' }]}
+                    onPress={handleExportBackup}
+                  >
+                    <Text style={[styles.btnSubmitText, { color: isDark ? '#090d16' : '#ffffff' }]}>{t.exportBtn}</Text>
+                  </TouchableOpacity>
                 </>
               ) : (
                 <>
                   <Text style={[styles.backupDesc, { color: colors.muted }]}>{t.importDesc}</Text>
-                  <TextInput
-                    style={[styles.jsonBox, { backgroundColor: colors.inputBg, borderColor: colors.border, color: colors.text }]}
-                    multiline
-                    placeholder='[{"name": "...", "url": "..."}]'
-                    placeholderTextColor={colors.muted}
-                    value={importJson}
-                    onChangeText={setImportJson}
-                  />
-                  <TouchableOpacity style={[styles.btnSubmit, { backgroundColor: colors.accent, marginTop: 12 }]} onPress={handleImport}>
+                  <TouchableOpacity
+                    style={[styles.btnSubmit, { backgroundColor: colors.accent, marginTop: 4, alignSelf: 'flex-start' }]}
+                    onPress={handlePickBackup}
+                  >
                     <Text style={[styles.btnSubmitText, { color: isDark ? '#090d16' : '#ffffff' }]}>{t.importBtn}</Text>
                   </TouchableOpacity>
                 </>
@@ -1037,14 +1119,6 @@ const styles = StyleSheet.create({
   backupDesc: {
     fontSize: 11,
     marginBottom: 8,
-    fontFamily: Platform.OS === 'ios' ? 'Courier' : 'monospace',
-  },
-  jsonBox: {
-    borderWidth: 1,
-    borderRadius: 8,
-    padding: 8,
-    height: 140,
-    fontSize: 10,
     fontFamily: Platform.OS === 'ios' ? 'Courier' : 'monospace',
   },
 });

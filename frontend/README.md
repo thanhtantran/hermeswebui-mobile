@@ -29,7 +29,8 @@
 
 5. **Lưu trữ bảo mật & Sao lưu cấu hình**:
    - Lưu trữ cục bộ an toàn thông qua AsyncStorage.
-   - Hỗ trợ Xuất (Export) và Nhập (Import) danh sách cấu hình máy chủ dưới dạng JSON nhanh chóng.
+   - Xuất (Export) danh sách máy chủ ra file JSON và lưu trực tiếp vào bộ nhớ thiết bị qua hộp thoại chia sẻ.
+   - Nhập (Import) bằng cách chọn file JSON sao lưu từ thiết bị; máy chủ trùng địa chỉ sẽ tự động được bỏ qua.
 
 ---
 

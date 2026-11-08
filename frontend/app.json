@@ -2,11 +2,12 @@
   "expo": {
     "name": "Hermes Mobile",
     "slug": "hermes-webui-mobile-app",
-    "version": "1.0.0",
+    "version": "1.0.1",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "hermesmobile",
     "userInterfaceStyle": "automatic",
+    "newArchEnabled": false,
     "splash": {
       "image": "./assets/images/splash-image.png",
       "resizeMode": "contain",
@@ -22,6 +23,7 @@
         "backgroundColor": "#090d16"
       },
       "package": "com.thanhtan.hermesmobile",
+      "versionCode": 2,
       "permissions": [
         "INTERNET",
         "ACCESS_NETWORK_STATE"
