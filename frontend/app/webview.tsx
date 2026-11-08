@@ -9,6 +9,7 @@ import {
   Platform,
   BackHandler,
   SafeAreaView,
+  PermissionsAndroid,
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { WebView } from 'react-native-webview';
@@ -36,6 +37,42 @@ export default function WebViewScreen() {
       }
     }
   }, [params.urlData]);
+
+  // Request mic permission before the page calls getUserMedia, so the WebView
+  // can grant the request immediately instead of the site reporting a denial.
+  useEffect(() => {
+    if (Platform.OS !== 'android') return;
+    PermissionsAndroid.request(PermissionsAndroid.PERMISSIONS.RECORD_AUDIO, {
+      title: 'Microphone access',
+      message: 'Hermes needs microphone access for voice input.',
+      buttonPositive: 'Allow',
+      buttonNegative: 'Deny',
+    })
+      .then((result) => {
+        if (result === PermissionsAndroid.RESULTS.NEVER_ASK_AGAIN) {
+          Alert.alert(
+            'Microphone blocked',
+            'Allow microphone access for Hermes Mobile in Android Settings to use voice input.'
+          );
+        }
+      })
+      .catch(() => {});
+  }, []);
+
+  // Android WebView has no Web Speech API, so force Hermes to use its
+  // MediaRecorder -> /api/transcribe path instead of SpeechRecognition.
+  const forceMediaRecorderScript =
+    Platform.OS === 'android'
+      ? `
+    (function() {
+      try {
+        localStorage.setItem('mic_force_mediarecorder', '1');
+        localStorage.setItem('mic_force_mediarecorder_expires', String(Date.now() + 86400000));
+      } catch (e) {}
+    })();
+    true;
+  `
+      : '';
 
   // Android hardware back = webview back (if possible), else close screen
   useEffect(() => {
@@ -223,6 +260,7 @@ export default function WebViewScreen() {
           }}
           onNavigationStateChange={handleNavigationStateChange}
           injectedJavaScript={injectedJavaScript}
+          injectedJavaScriptBeforeContentLoaded={forceMediaRecorderScript}
           javaScriptEnabled={true}
           domStorageEnabled={true}
           thirdPartyCookiesEnabled={true}

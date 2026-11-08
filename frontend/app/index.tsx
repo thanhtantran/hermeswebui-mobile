@@ -14,6 +14,7 @@ import {
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import Constants from 'expo-constants';
 import * as DocumentPicker from 'expo-document-picker';
 import * as Sharing from 'expo-sharing';
 import { File, Paths } from 'expo-file-system';
@@ -582,6 +583,7 @@ export default function HomeScreen() {
         {/* Server List */}
         <FlatList
           data={filtered}
+          style={styles.list}
           keyExtractor={(item) => item.id}
           renderItem={renderUrlCard}
           contentContainerStyle={styles.listContainer}
@@ -596,6 +598,10 @@ export default function HomeScreen() {
             </View>
           }
         />
+
+        <Text style={[styles.versionText, { color: colors.muted }]}>
+          v{Constants.expoConfig?.version ?? ''}
+        </Text>
       </View>
 
       {/* Add / Edit Modal */}
@@ -873,9 +879,19 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     fontFamily: Platform.OS === 'ios' ? 'Courier' : 'monospace',
   },
+  list: {
+    flex: 1,
+  },
   listContainer: {
     paddingBottom: 24,
     gap: 10,
+  },
+  versionText: {
+    textAlign: 'center',
+    fontSize: 10,
+    paddingVertical: 8,
+    fontFamily: Platform.OS === 'ios' ? 'Courier' : 'monospace',
+    opacity: 0.7,
   },
   card: {
     padding: 14,
